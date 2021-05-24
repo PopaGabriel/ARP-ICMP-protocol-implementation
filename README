@@ -1,0 +1,78 @@
+Grupa: 324CC
+Nume: Popa Catalin Gabriel
+
+			Detalii implementare
+
+	La inceput imi creez mai intai tabela de rutare si fiecare camp il
+  transform in little endian, ceea ce a facut gasirea bug-urilor super greoaie,
+  deoarece trebuiau transformate anumite campuri de fiecare data in big endian
+  cand erau trimise in alte functii. Citesc din fisierul primit toate liniile
+  una cate una si dupa despart fiecare camp din linie si il transform pe
+  fiecare dintre aceste linii in entries din tabela, ma folosesc de functia
+  de inet_aton pentru a transforma din format human readable in format pe 32
+  de biti in big endian, dupa transform rezultatul in little endian.
+	In cod o sa se observe cateva structuri noi structura de entry care nu
+  reprezinta nimic altceva decat un nivel din tabela de rutare, de asemenea se
+  observa si structura de entry_table care nu este nimic altceva decat o
+  structura care contine un vector de entries si marimea actuala si marimea
+  maxima, aceasta este alocata dinamic si la fiecare 1000 de entries adaugate
+  acesta isi mareste marimea maxima cu 1000. De asemenea o sa se vada si
+  structura de phisic_table care ca in cazul de mai sus reprezinta doar o
+  structura care contine un vector de arp_entries adica de adrese ip si
+  corespondenta lor Mac, si aceasta este implementata dinamic porneste goala
+  si la fiecare 100 de adaugari se mareste marimea maxima cu 100. Motivul
+  pentru care acestea exista sunt deoarece sunt mai obisnuit cu astfel
+  de structuri si face codul sa fie mai usor de citit si de inteles.
+	Dupa ce primesc un packet, verific daca este de tip ARP sau de tip
+  ICMP, in cazul in care este de tip ICMP verific daca acesta ii este destinat
+  ruterului si daca tipul mesajului este de tip ECHO_REQUEST. Daca mesajul este
+  destinat ruterului si tipul lui nu este ECHO_REQUEST atunci o sa dea drop la
+  pachet, insa daca tipul este atunci o sa trimita un mesaj de acest tip celui
+   care a trimis cererea.
+	Dupa acea verificare, ma uit sa vad daca numarul de jumpuri ramase
+  este mai mare de 1, si daca nu atunci dau drop la packet, dupa ii verific
+  checks-ul si daca acesta nu este corect din nou dau drop packetului. In cazul
+  in care orice test pica o sa trimit inapoi un mesaj de eroare specific, dupa
+  toate aceste verificari updatez numarul de jump-uri ramase si check-sumul,
+  si pregatesc sa forwardez packetul deoarece acesta clar nu este destinat
+  ruterului inseamna ca acest packet trebuie trimis mai departe. Asa ca urmeaza
+  sa ma uit in tabela de rutare sa caut cea mai buna cale folosindu-ma de masca
+  si de prefix ca in formula data in enunt. Am grija sa aleg mereu drumul cu
+  masca cea mai mare care respecta formula, cautarea se face in O(n) printr-o
+  parcurgere liniara. Dupa cautare verific daca a fost gasita vreo cale pana
+  la destinatie, iar daca nu atunci o sa trimit un mesaj de eroare pentru ca
+  nu a putut fi gasita vreo cale pana la destinatie, si din nou o sa dau drop
+  la pachet.
+	In cazul in care am trecut si de aceasta etapa inseamna ca merg la
+  urmatorul pas si incep sa caut adresa IP a destinatiei in tabela ARP, sa vad
+  daca a fost sau nu salvata deja in tabela. In cazul in care aceasta nu a fost
+  salvata si prin urmare nu putem trimite direct pachetul, o sa alocam memorie
+  si o sa salvam pachetul intr-un queue, alocarea se face din cauza faptului ca
+  pachetul m se tot schimba pe parcurs si nu ramane constant, asa ca salvez
+  datele din m intr-un pachet auxiliar. Construiesc un mesaj de tip eth_header
+  care contine adresa Mac a sursei cat si o adresa de tip broadcast care are
+  toate campurile 0XFF din cauza conventiei protocolului. Dupa salvare trimit
+  un ARP_Request deoarece trebuie sa aflu adresa Mac a destinatiei, daca 
+  gasesc insa calea atunci trimit direct mai departe pachetul.
+	Tabela arp este facuta dinamic initial aceasta este goala si nu contine
+  detalii despre adresele ip si adresele Mac aferente, de aceea atunci cand
+  ruterul primeste un packet de tipul ARP_Reply adresa primita este bagata in
+  tabela arp a ruterului apoi este parcursa coada de pachete unde este scos
+  cate un packet pe rand si este verificat daca exista cale catre destinatia
+  lui, iar daca cumva nu s-a gasit vreo cale din cine stie ce eroare atunci
+  acestui pachet i se va da drop. Daca insa exista cale verific daca exista
+  adresa ip a destinatiei in tabela arp iar daca nu atunci ma opresc din cautat
+  in queue, adaug iar packetul in queue si astept sa primesc un alt mesaj de 
+  tip ARP_Reply ca sa continui.
+	Atunci cand primesc un ARP_Request atunci pur si simplu trimit inapoi
+  adresa Mac a interfetei cerute.
+
+			Feedback
+
+	Tema a fost destul de interesanta, mi-a luat o saptamana si jumatate.
+  Cel mai interesant lucru a fost protocolul arp insa cred ca putea fii
+  explicat un pic mai bine, adica cel putin pentru protocol sa fie pus un link
+  catre niste poze care explica tot procesul de la 0. Poate sa fie explicate
+  si alte functii ajutatoare si cum pot fi ele folosite, de exemplu functia de
+  inet_aton. In rest apreciez faptul ca aveam functia de send_arp deja
+  implementata.
