@@ -66,13 +66,3 @@ Nume: Popa Catalin Gabriel
   tip ARP_Reply ca sa continui.
 	Atunci cand primesc un ARP_Request atunci pur si simplu trimit inapoi
   adresa Mac a interfetei cerute.
-
-			Feedback
-
-	Tema a fost destul de interesanta, mi-a luat o saptamana si jumatate.
-  Cel mai interesant lucru a fost protocolul arp insa cred ca putea fii
-  explicat un pic mai bine, adica cel putin pentru protocol sa fie pus un link
-  catre niste poze care explica tot procesul de la 0. Poate sa fie explicate
-  si alte functii ajutatoare si cum pot fi ele folosite, de exemplu functia de
-  inet_aton. In rest apreciez faptul ca aveam functia de send_arp deja
-  implementata.
